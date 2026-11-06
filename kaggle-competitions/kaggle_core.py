@@ -23,7 +23,7 @@ def _run_kaggle(competition: str, env: dict | None = None, timeout: int = 90) ->
     rows = []
     for line in (r.stdout or "").splitlines():
         cols = [c.strip() for c in re.split(r"  +", line.strip()) if c.strip()]
-        if len(cols) < 5 or cols[0].lower() == "ref":
+        if len(cols) < 5 or cols[0].lower() == "ref" or set(cols[0]) <= {"-"}:
             continue
         status = next((c.split(".")[-1] for c in cols if "SubmissionStatus." in c), "UNKNOWN")
         score = next((c for c in cols if re.fullmatch(r"-?\d+\.\d+", c)), "")
