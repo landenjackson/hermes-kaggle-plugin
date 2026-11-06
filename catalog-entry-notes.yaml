@@ -1,0 +1,16 @@
+# Catalog entry schema notes (not committed as part of plugin):
+# This file goes into NousResearch/hermes-agent repo under plugin-catalog/
+# as kaggle-competitions.yaml when we open the hackathon PR.
+id: kaggle-competitions
+name: Kaggle Competitions
+description: Track Kaggle competitions from your agent — live submission status, score history, personal-best watch, leaderboards, and a desktop pane. Multi-competition.
+category: Tools
+tier: community
+repo: https://github.com/landenjackson/hermes-kaggle-plugin
+subdir: kaggle-competitions
+commit: TBD_AFTER_GITHUB_PUSH
+version: 0.1.0
+author: landenjackson
+tags: [kaggle, competitions, tracking, desktop]
+screenshots:
+  - assets/pane.png
