@@ -12,8 +12,10 @@ import time
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
-if str(_HERE) not in sys.path:
-    sys.path.insert(0, str(_HERE))
+_PLUGIN_ROOT = _HERE.parent  # kaggle_core.py lives at the plugin root, beside dashboard/
+for _p in (str(_HERE), str(_PLUGIN_ROOT)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from fastapi import APIRouter  # noqa: E402
 
