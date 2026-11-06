@@ -8,7 +8,7 @@ category: Tools
 tier: community
 repo: https://github.com/landenjackson/hermes-kaggle-plugin
 subdir: kaggle-competitions
-commit: TBD_AFTER_GITHUB_PUSH
+commit: acc343bc9d85cbb5ee72aca675ce51e444b1bccd
 version: 0.1.0
 author: landenjackson
 tags: [kaggle, competitions, tracking, desktop]
