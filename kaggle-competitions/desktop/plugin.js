@@ -1,14 +1,17 @@
-/* kaggle-competitions — desktop pane (v0.23 SDK, minimal imports). */
+/* kaggle-competitions — desktop pane (v0.23 SDK).
+   Data via ctx.rest (authenticated, scoped to /api/plugins/<id>). */
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from 'react/jsx-runtime'
 import { useEffect, useState } from 'react'
 
-const API = '/api/plugins/kaggle-competitions/submissions'
+const REFRESH_MS = 120000
 
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'
   }[c]))
 }
+
+let _rest = null // set in register(); authenticated fetch scoped to this plugin
 
 function Pane() {
   const [data, setData] = useState(null)
@@ -17,17 +20,18 @@ function Pane() {
   useEffect(() => {
     let alive = true
     const tick = () => {
-      fetch(API, { credentials: 'include' })
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json() })
-        .then(d => { if (alive) { setData(d); setErr(null) } })
+      const p = _rest
+        ? _rest('/submissions')
+        : Promise.reject(new Error('plugin transport unavailable'))
+      p.then(d => { if (alive) { setData(d); setErr(null) } })
         .catch(e => { if (alive) setErr(e) })
     }
     tick()
-    const t = setInterval(tick, 120000)
+    const t = setInterval(tick, REFRESH_MS)
     return () => { alive = false; clearInterval(t) }
   }, [])
 
-  if (err) return _jsx('div', { style: pad(), children: 'kaggle API unreachable (' + esc(err.message || err) + ')' })
+  if (err) return _jsx('div', { style: pad(), children: 'kaggle API: ' + esc(err.message || String(err)) + ' — try Reload desktop plugins (Ctrl+K)' })
   if (!data) return _jsx('div', { style: pad(), children: 'loading…' })
 
   const comps = Object.keys(data)
@@ -63,6 +67,7 @@ export default {
   id: 'kaggle-competitions',
   name: 'Kaggle Competitions',
   register(ctx) {
+    _rest = (path, opts) => ctx.rest(path, opts)
     ctx.register({
       id: 'pane',
       area: 'panes',
