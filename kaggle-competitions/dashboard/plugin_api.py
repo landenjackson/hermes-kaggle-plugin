@@ -1,20 +1,27 @@
-"""Dashboard API — GET /api/plugins/kaggle-competitions/submissions
+"""Dashboard API — mounted under /api/plugins/kaggle-competitions/ by the web server.
 
-Returns submission snapshots for all tracked competitions. Auth is handled by the
-dashboard's own gate before this handler runs. Never logs tokens.
+Exposes a FastAPI ``router`` (the contract the web server's importer expects).
+Returns submission snapshots for all tracked competitions. Auth is enforced by the
+server's auth wall before this router runs. Never logs tokens.
 """
 from __future__ import annotations
 
 import os
 import sys
+import time
 from pathlib import Path
 
-# make kaggle_core importable regardless of how the dashboard imports us
 _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
+from fastapi import APIRouter  # noqa: E402
+
 from kaggle_core import _run_kaggle, best_score, load_state  # noqa: E402
+
+router = APIRouter()
+
+_CACHE_TTL_SECONDS = 600
 
 
 def _data_dir() -> Path:
@@ -23,41 +30,42 @@ def _data_dir() -> Path:
 
 
 def _tracked() -> list[str]:
-    import json
     cfg = Path(os.environ.get("HERMES_HOME") or Path.home() / ".hermes") / "config.yaml"
-    try:  # light parse — just the competitions list under plugins.entries
+    try:
         import yaml
         doc = yaml.safe_load(cfg.read_text()) or {}
         comps = (((doc.get("plugins") or {}).get("entries") or {})
                  .get("kaggle-competitions", {}).get("settings", {}) or {}).get("competitions") or []
         return [str(c) for c in comps]
     except Exception:
-        pass
-    state = load_state(_data_dir())
-    return list(state.get("competitions", {}).keys())
-
-
-def register(api):  # dashboard plugin API hook
-    @api.get("/api/plugins/kaggle-competitions/submissions")
-    def submissions(req):
-        out = {}
         state = load_state(_data_dir())
-        for comp in _tracked():
-            cached = state.get("competitions", {}).get(comp)
-            if cached and time.fresh(cached.get("last_poll", 0), minutes=10):
-                rows = cached.get("rows", [])
-            else:
+        return list(state.get("competitions", {}).keys())
+
+
+def _is_fresh(ts) -> bool:
+    return (time.time() - (ts or 0)) < _CACHE_TTL_SECONDS
+
+
+@router.get("/submissions")
+def submissions():
+    out = {}
+    state = load_state(_data_dir())
+    for comp in _tracked():
+        cached = state.get("competitions", {}).get(comp) or {}
+        rows = cached.get("rows", [])
+        if not _is_fresh(cached.get("last_poll", 0)):
+            try:
+                rows = _run_kaggle(comp)
+                state.setdefault("competitions", {}).setdefault(comp, {})
+                state["competitions"][comp] = {"rows": rows, "last_poll": time.time()}
                 try:
-                    rows = _run_kaggle(comp)
-                except Exception as e:
-                    out[comp] = {"error": str(e)[:150]}
-                    continue
-            out[comp] = {"best": best_score(rows), "count": len(rows), "recent": rows[:10]}
-        return out
-
-
-import time  # noqa: E402  (kept at bottom so register() stays at top for readers)
-
-
-def fresh(ts: float, minutes: int) -> bool:  # helper referenced above
-    return (time.time() - (ts or 0)) < minutes * 60
+                    import json
+                    _data_dir().mkdir(parents=True, exist_ok=True)
+                    (_data_dir() / "state.json").write_text(json.dumps(state, indent=1))
+                except Exception:
+                    pass
+            except Exception as e:
+                out[comp] = {"error": str(e)[:150]}
+                continue
+        out[comp] = {"best": best_score(rows), "count": len(rows), "recent": rows[:10]}
+    return out
