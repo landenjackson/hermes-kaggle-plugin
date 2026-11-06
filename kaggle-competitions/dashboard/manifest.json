@@ -1,0 +1,8 @@
+{
+  "name": "kaggle-competitions",
+  "label": "Kaggle Competitions",
+  "description": "Live Kaggle submission tracking: best scores, recent runs and PB watch for every tracked competition.",
+  "icon": "Trophy",
+  "version": "0.1.0",
+  "api": "plugin_api.py"
+}
