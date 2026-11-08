@@ -41,7 +41,7 @@ def run_kaggle(comp):
         status = next((c.split(".")[-1] for c in cols if "SubmissionStatus." in c), "UNKNOWN")
         score = next((c for c in cols if re.fullmatch(r"-?\d+\.\d+", c)), "")
         desc = cols[3] if len(cols) > 4 else ""
-        rows.append({"ref": cols[0], "date": cols[1] if len(cols) > 1 else "",
+        rows.append({"ref": cols[0], "date": cols[2] if len(cols) > 2 else "",
                      "status": status, "score": score, "desc": desc[:120]})
     return rows
 
