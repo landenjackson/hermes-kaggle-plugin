@@ -11,8 +11,7 @@ from pathlib import Path
 HOME = Path.home()
 STATE_DIR = HOME / ".hermes/plugin-data/kaggle-competitions"
 STATE = STATE_DIR / "state.json"
-# token source: KAGGLE_API_TOKEN env, or a local .env file
-TOKEN_FILE = Path(os.environ.get("KAGGLE_TOKEN_FILE", str(HOME / ".hermes/kaggle/.env")))
+TOKEN_FILE = HOME / "projects/quantum-comp/.env"
 KAGGLE = HOME / ".local/bin/kaggle"
 COMPETITIONS = ["google-verifiable-quantum-circuit-compilation"]
 
