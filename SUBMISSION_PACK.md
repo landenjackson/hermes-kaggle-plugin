@@ -14,7 +14,7 @@ category: Tools
 tier: community
 repo: https://github.com/landenjackson/hermes-kaggle-plugin
 subdir: kaggle-competitions
-commit: acc343bc9d85cbb5ee72aca675ce51e444b1bccd
+commit: d1891c6847d25edd053f34f92d23c66f54c58c7f
 version: 0.1.0
 author: landenjackson
 license: MIT
