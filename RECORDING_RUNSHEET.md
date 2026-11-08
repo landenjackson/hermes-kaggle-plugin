@@ -44,6 +44,10 @@ Speak casually. Flubbed words are fixed by cuts.
   `hermes plugins install landenjackson/hermes-kaggle-plugin`
   while recording. That's the REAL install flow, from scratch.
 - (After recording: re-enable it — `hermes plugins enable kaggle-competitions`)
+- NOTE: after a fresh install, the first "any new scores?" establishes the baseline
+  and reports nothing new — that is CORRECT behavior. The demo line still works:
+  "it polls every competition I track" — and if a PENDING submission completes
+  during recording, it reports exactly that one.
 - Say: "One command installs it. It reads your Kaggle token from the
   environment — never logs it, never shows it."
 - Stop recording.

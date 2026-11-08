@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kaggle Board — Landen Jackson</title>
+<style>
+:root{--void:#050705;--panel:#0a0f0a;--green:#33ff66;--green-dim:#1a8f42;--text:#c9d6cc;--muted:#5d6f61;--border:#16241a;--amber:#ffb347;--mono:'JetBrains Mono',Consolas,monospace;--display:'Space Grotesk',system-ui,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--void);color:var(--text);font-family:var(--mono);font-size:15px;line-height:1.7;padding:40px 24px}
+.wrap{max-width:760px;margin:0 auto}
+h1{font-family:var(--display);color:#fff;font-size:clamp(28px,5vw,44px);margin:8px 0 6px}
+h1 .g{color:var(--green)}
+.updated{color:var(--muted);font-size:12px;margin-bottom:34px}
+.updated b{color:var(--green-dim)}
+.comp{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:24px}
+.comp h2{font-family:var(--display);color:#e6f2ea;font-size:17px;margin-bottom:14px;font-weight:600}
+.comp .best{font-size:13px;color:var(--muted);margin-bottom:16px}
+.comp .best b{color:var(--green);font-size:20px;font-family:var(--display)}
+.row{display:flex;gap:14px;padding:8px 0;border-bottom:1px dashed var(--border);align-items:baseline;font-size:13.5px}
+.row:last-child{border-bottom:none}
+.score{color:var(--green);font-weight:600;min-width:70px;font-variant-numeric:tabular-nums}
+.score.pen{color:var(--amber)}
+.desc{flex:1;color:var(--text)}
+.desc .d{display:block;color:var(--text)}
+.desc .f{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.date{color:var(--muted);font-size:11px}
+.status{font-size:10px;letter-spacing:.1em;color:var(--muted)}
+.status.complete{color:var(--green-dim)}
+@media (max-width:640px){
+  body{padding:24px 16px}
+  .row{flex-direction:column;gap:3px;padding:10px 0}
+  .score{min-width:0;font-size:16px}
+  .desc{font-size:12.5px;line-height:1.5}
+  .comp{padding:18px 16px}
+}
+.back{display:inline-block;margin-top:10px;color:var(--green-dim);font-size:13px}
+.back:hover{color:var(--green)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="font-size:11px;letter-spacing:.2em;color:var(--green-dim);text-transform:uppercase">live · kaggle</div>
+  <h1>Competition <span class="g">board</span></h1>
+  <div class="updated">Auto-refreshed every 30 minutes · last update <b id="updated">—</b></div>
+  <div id="board">loading…</div>
+  <a class="back" href="/index.html">← back to the site</a>
+</div>
+<script>
+const COMP = 'google-verifiable-quantum-circuit-compilation';
+fetch('/kaggle_state.json').then(r => r.json()).then(state => {
+  const c = (state.competitions || {})[COMP];
+  if (!c) { document.getElementById('board').textContent = 'No data yet.'; return; }
+  if (c.last_poll) {
+    const d = new Date(c.last_poll * 1000);
+    document.getElementById('updated').textContent = d.toLocaleString();
+  }
+  const comp = document.createElement('div');
+  comp.className = 'comp';
+  const best = c.rows.reduce((m, r) => Math.max(m, parseFloat(r.score) || -Infinity), -Infinity);
+  comp.innerHTML = '<h2>' + COMP.replace(/-/g, ' ') + '</h2>' +
+    '<div class="best">personal best <b>' + (best > -Infinity ? best.toFixed(5) : '—') + '</b></div>' +
+    c.rows.slice(0, 12).map(r => {
+      const d = (r.desc || r.status || '');
+      const short = d.length > 90 ? d.slice(0, 90) + '…' : d;
+      return '<div class="row"><span class="score' + (r.status === 'PENDING' ? ' pen' : '') + '">' +
+      (r.score || '⏳') + '</span><span class="desc"><span class="d">' + short +
+      '</span><span class="f">' + (r.ref || '') + ' · ' + (r.date || '') + '</span></span></div>';
+    }).join('');
+  document.getElementById('board').replaceChildren(comp);
+}).catch(e => { document.getElementById('board').textContent = 'failed to load: ' + e; });
+</script>
+</body>
+</html>

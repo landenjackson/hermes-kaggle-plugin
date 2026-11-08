@@ -17,10 +17,6 @@ config_schema:
     type: list
     description: "Competition slugs to track, e.g. [google-verifiable-quantum-circuit-compilation]"
     default: []
-  poll_minutes:
-    type: int
-    description: "Minutes between score polls"
-    default: 30
 provides_tools:
   - kaggle_list_submissions
   - kaggle_score_history

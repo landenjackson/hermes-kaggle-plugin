@@ -18,7 +18,9 @@ tried. This plugin puts all of it inside your agent:
 - **Watch pending submissions** — the agent polls and tells you the moment a
   `PENDING` run completes with a score
 - **Keep the whole log** — every submission with date, score, and description,
-  stored locally (your experiment history becomes queryable)
+  stored locally (your experiment history becomes queryable). "Personal best"
+  means the highest score — right for accuracy-style metrics; for lower-is-better
+  metrics (RMSE), read it as the recorded maximum of the log.
 - **See it live** — a desktop pane showing best score + recent runs for every
   tracked competition, refreshing automatically
 
@@ -69,6 +71,7 @@ Example session:
 
 ```
 you:  any new scores?
+hermes: (polls all tracked competitions — baseline on first run, then only changes)
 hermes: v15 on the quantum comp just completed — 23.90712. That's a new PB (+0.0003).
 
 you:  how has my score moved this week?

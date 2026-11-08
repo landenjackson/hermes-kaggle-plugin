@@ -15,19 +15,30 @@ def _data_dir(ctx):
         return Path.home() / ".hermes" / "plugin-data" / "kaggle-competitions"
 
 
-def _kaggle_env(ctx) -> dict | None:
-    """Find KAGGLE_API_TOKEN without ever logging its value."""
+def _kaggle_env(ctx) -> dict:
+    """Ensure the Kaggle CLI can authenticate. The CLI reads ~/.kaggle/kaggle.json
+    itself (the standard credential location) — we only inject KAGGLE_API_TOKEN if
+    a .env file supplies one. The token is never logged or echoed."""
     env = dict(os.environ)
     if env.get("KAGGLE_API_TOKEN"):
         return env
-    for cand in ("~/.hermes/kaggle/.env", "~/projects/quantum-comp/.env"):
-        p = os.path.expanduser(cand)
-        if os.path.isfile(p):
+    kaggle_json = Path.home() / ".kaggle" / "kaggle.json"
+    if kaggle_json.is_file():
+        try:
+            import json as _json
+            creds = _json.loads(kaggle_json.read_text())
+            env["KAGGLE_USERNAME"] = creds.get("username", "")
+            env["KAGGLE_KEY"] = creds.get("key", "")
+        except Exception:
+            pass
+    for cand in ("~/.hermes/kaggle/.env",):
+        p = Path(os.path.expanduser(cand))
+        if p.is_file():
             try:
-                for line in open(p):
+                for line in p.read_text().splitlines():
                     if line.startswith("KAGGLE_API_TOKEN="):
                         env["KAGGLE_API_TOKEN"] = line.split("=", 1)[1].strip()
-                        return env
+                        break
             except OSError:
                 pass
     return env
@@ -93,15 +104,17 @@ def kaggle_score_history(args: dict, ctx=None, **kwargs) -> str:
 
 def kaggle_watch(args: dict, ctx=None, **kwargs) -> str:
     """Poll all tracked competitions now; report any NEW completed scores since last check."""
-    out = {"new_results": [], "checked": []}
+    out = {"new_results": [], "checked": [], "errors": []}
     for c in _tracked(ctx):
         try:
             res = kaggle_core.poll_once(c, _data_dir(ctx), _kaggle_env(ctx))
             out["checked"].append(c)
             for r in res["new_results"]:
                 out["new_results"].append({"competition": c, **r})
+            if res.get("initialized"):
+                out.setdefault("initialized", []).append(c)
         except Exception as e:
-            out["checked"].append(f"{c}: error {str(e)[:120]}")
+            out["errors"].append({"competition": c, "error": str(e)[:120]})
     return json.dumps(out)
 
 
