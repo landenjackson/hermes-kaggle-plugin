@@ -11,15 +11,24 @@ from pathlib import Path
 HOME = Path.home()
 STATE_DIR = HOME / ".hermes/plugin-data/kaggle-competitions"
 STATE = STATE_DIR / "state.json"
-TOKEN_FILE = HOME / "projects/quantum-comp/.env"
 KAGGLE = HOME / ".local/bin/kaggle"
 COMPETITIONS = ["google-verifiable-quantum-circuit-compilation"]
 
+# token source: KAGGLE_API_TOKEN env -> ~/.kaggle/kaggle.json (KGAT key) -> legacy .env
 env = dict(os.environ)
-if TOKEN_FILE.is_file():
-    for line in TOKEN_FILE.read_text().splitlines():
-        if line.startswith("KAGGLE_API_TOKEN="):
-            env["KAGGLE_API_TOKEN"] = line.split("=", 1)[1].strip()
+if not env.get("KAGGLE_API_TOKEN"):
+    _kj = HOME / ".kaggle/kaggle.json"
+    if _kj.is_file():
+        try:
+            env["KAGGLE_API_TOKEN"] = json.loads(_kj.read_text())["key"]
+        except Exception:
+            pass
+if not env.get("KAGGLE_API_TOKEN"):
+    _tf = HOME / "projects/quantum-comp/.env"
+    if _tf.is_file():
+        for line in _tf.read_text().splitlines():
+            if line.startswith("KAGGLE_API_TOKEN="):
+                env["KAGGLE_API_TOKEN"] = line.split("=", 1)[1].strip()
 
 def run_kaggle(comp):
     r = subprocess.run([str(KAGGLE), "competitions", "submissions", "-c", comp],
