@@ -8,8 +8,12 @@ requires_hermes: ">=0.23.0"
 author: Landen Jackson
 homepage: https://github.com/landenjackson/hermes-kaggle-plugin
 license: MIT
-description: "Track Kaggle competitions from your agent: live submission status, score history, personal-best tracking, push alerts on new scores, and a live desktop pane. Multi-competition — add any slug."
+description: "Track Kaggle competitions from your agent: live submission status, score history, personal-best tracking, and new-score watch. Multi-competition — add any slug."
 tags: [kaggle, competitions, dashboard, desktop, tracking]
+requires_env:
+  - name: KAGGLE_API_TOKEN
+    secret: true
+    description: "Kaggle API token. Optional if ~/.kaggle/kaggle.json exists — the CLI reads that itself."
 python_dependencies:
   - "requests>=2.31,<3"
 config_schema:

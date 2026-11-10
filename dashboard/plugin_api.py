@@ -27,21 +27,24 @@ _CACHE_TTL_SECONDS = 600
 
 
 def _data_dir() -> Path:
-    base = os.environ.get("HERMES_HOME") or str(Path.home() / ".hermes")
-    return Path(base) / "plugin-data" / "kaggle-competitions"
+    from hermes_constants import get_hermes_home
+    return get_hermes_home() / "plugin-data" / "kaggle-competitions"
 
 
 def _tracked() -> list[str]:
-    cfg = Path(os.environ.get("HERMES_HOME") or Path.home() / ".hermes") / "config.yaml"
+    """Tracked slugs from Hermes's config loader (same source the settings form
+    writes), falling back to competitions already present in plugin state."""
     try:
-        import yaml
-        doc = yaml.safe_load(cfg.read_text()) or {}
+        from hermes_cli.config import load_config
+        doc = load_config() or {}
         comps = (((doc.get("plugins") or {}).get("entries") or {})
                  .get("kaggle-competitions", {}).get("settings", {}) or {}).get("competitions") or []
-        return [str(c) for c in comps]
+        if comps:
+            return [str(c) for c in comps]
     except Exception:
-        state = load_state(_data_dir())
-        return list(state.get("competitions", {}).keys())
+        pass
+    state = load_state(_data_dir())
+    return list(state.get("competitions", {}).keys())
 
 
 def _is_fresh(ts) -> bool:
@@ -49,21 +52,24 @@ def _is_fresh(ts) -> bool:
 
 
 def _kaggle_env() -> dict:
-    """Kaggle CLI env: the CLI reads ~/.kaggle/kaggle.json itself. We only inject
-    KAGGLE_API_TOKEN from a local .env when present. Never logs the token."""
-    env = dict(os.environ)
-    if env.get("KAGGLE_API_TOKEN"):
-        return env
-    for cand in ("~/.hermes/kaggle/.env",):
-        p = Path(os.path.expanduser(cand))
-        if p.is_file():
-            try:
-                for line in p.read_text().splitlines():
-                    if line.startswith("KAGGLE_API_TOKEN="):
-                        env["KAGGLE_API_TOKEN"] = line.split("=", 1)[1].strip()
-                        break
-            except OSError:
-                pass
+    """Minimal, explicit environment for the kaggle CLI child process — never the
+    inherited environment. Auth: KAGGLE_API_TOKEN via Hermes's secret scope
+    (declared secret in plugin.yaml); if absent the CLI reads
+    ~/.kaggle/kaggle.json itself. Never logs the token."""
+    env: dict[str, str] = {}
+    for key in ("PATH", "HOME", "LANG", "LC_ALL",
+                "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY",
+                "http_proxy", "https_proxy", "no_proxy"):
+        value = os.environ.get(key)
+        if value:
+            env[key] = value
+    try:
+        from agent.secret_scope import get_secret
+        token = get_secret("KAGGLE_API_TOKEN")
+    except Exception:
+        token = None
+    if token:
+        env["KAGGLE_API_TOKEN"] = token
     return env
 
 

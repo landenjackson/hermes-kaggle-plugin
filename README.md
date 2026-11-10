@@ -6,7 +6,7 @@ desktop pane** — for any number of competitions at once.
 
 > Not a guru. Just ships. — built by an active Kaggle competitor, for active Kaggle competitors.
 
-![Live Kaggle board on landenjackson.com — personal best 23.90679](assets/mobile-board.jpg)
+![Desktop pane — live submission board](assets/mobile-board.jpg)
 
 ## Why
 
