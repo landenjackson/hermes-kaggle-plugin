@@ -150,11 +150,15 @@ def kaggle_leaderboard(args: dict, **kwargs) -> str:
     top = _validate_top(args.get("top") or 10)
     try:
         r = subprocess.run(
-            [kaggle_core.KAGGLE_BIN, "competitions", "leaderboard", "-c", comp,
-             "--show", "--top", str(top)],
+            [kaggle_core.KAGGLE_BIN, "competitions", "leaderboard", "-c", comp, "--show"],
             capture_output=True, text=True, timeout=90, env=_child_env())
+        raw = (r.stdout or r.stderr)
+        # parse the CLI table: header + first `top` data rows (no --top flag in CLI 2.x)
+        lines = [ln for ln in raw.splitlines()
+                 if ln.strip() and not ln.startswith("Next Page Token")]
+        data = [ln for ln in lines[2:] if ln.strip() and not set(ln.strip()) <= {"-"}]
         return json.dumps({"competition": comp, "top": top,
-                           "leaderboard": (r.stdout or r.stderr)[:3000]})
+                           "leaderboard": "\n".join(lines[:2] + data[:top])[:3000]})
     except Exception as e:
         return json.dumps({"error": str(e)[:200]})
 
